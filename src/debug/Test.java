@@ -8,31 +8,37 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import exceptions.EmptyBeliefStateException;
-import exceptions.InconsistencyException;
-import main.Action;
-import main.AdvancedSet;
-import main.AndOrSearch;
-import main.Atom;
-import main.BeliefState;
-import main.Formula;
-import main.Init;
-import main.Plan;
-import main.Problem;
-import main.State;
-import main.effect.deterministic.ConjunctiveEffect;
-import main.effect.deterministic.term.ConditionalTermEffect;
-import main.effect.deterministic.term.unconditional.constant.NullEffect;
-import main.effect.deterministic.term.unconditional.literal.NegativeLiteralEffect;
-import main.effect.deterministic.term.unconditional.literal.PositiveLiteralEffect;
-import main.effect.nondeterministic.OneOfEffect;
-import main.formula.ConjunctiveFormula;
-import main.formula.term.literal.NegativeLiteral;
-import main.formula.term.literal.PositiveLiteral;
-import main.init.deterministic.ConjunctiveInit;
-import main.init.deterministic.PositiveLiteralInit;
-import main.init.nondeterministic.OneOfInit;
+import exception.EmptyBeliefStateException;
+import exception.InconsistencyException;
+import exception.UnrecognisedEffect;
+import exception.UnrecognisedObservation;
+import language.Action;
+import language.Atom;
+import language.DomainProblem;
+import language.Formula;
+import language.Init;
+import language.Name;
+import language.Percept;
+import language.effect.deterministic.ConjunctiveEffect;
+import language.effect.deterministic.term.ConditionalTermEffect;
+import language.effect.deterministic.term.unconditional.constant.NullEffect;
+import language.effect.deterministic.term.unconditional.literal.NegativeLiteralEffect;
+import language.effect.deterministic.term.unconditional.literal.PositiveLiteralEffect;
+import language.effect.nondeterministic.OneOfEffect;
+import language.formula.ConjunctiveFormula;
+import language.formula.term.literal.NegativeLiteral;
+import language.formula.term.literal.PositiveLiteral;
+import language.init.deterministic.ConjunctiveInit;
+import language.init.deterministic.PositiveLiteralInit;
+import language.init.nondeterministic.OneOfInit;
+import language.observation.deterministic.ConjunctiveObservation;
+import language.observation.deterministic.term.ConditionalTermObservation;
+import language.observation.deterministic.term.unconditional.literal.NegativeLiteralObservation;
+import language.observation.deterministic.term.unconditional.literal.PositiveLiteralObservation;
 import parser.Parser;
+import search.AndOrSearch;
+import search.Plan;
+import structure.AdvancedSet;
 
 public class Test {
 	
@@ -40,18 +46,18 @@ public class Test {
 	public static Atom dl = new Atom("dirt-left");
 	public static Atom dr = new Atom("dirt-right");
 	
-	private static AdvancedSet<Atom> domain = new AdvancedSet<>(vl, dl, dr);
+	private static AdvancedSet<Atom> predicates = new AdvancedSet<>(vl, dl, dr);
 	
-	private static State s1 = new State(vl, dl, dr);
-	private static State s2 = new State(dl, dr);
-	private static State s3 = new State(vl, dl);
-	private static State s4 = new State(dl);
-	private static State s5 = new State(vl, dr);
-	private static State s6 = new State(dr);
-	private static State s7 = new State(vl);
-	private static State s8 = new State();
-	
-	private static AdvancedSet<State> states = new AdvancedSet<State>(s1, s2, s3, s4, s5, s6, s7, s8);
+//	private static State s1 = new State(vl, dl, dr);
+//	private static State s2 = new State(dl, dr);
+//	private static State s3 = new State(vl, dl);
+//	private static State s4 = new State(dl);
+//	private static State s5 = new State(vl, dr);
+//	private static State s6 = new State(dr);
+//	private static State s7 = new State(vl);
+//	private static State s8 = new State();
+//	
+//	private static AdvancedSet<State> states = new AdvancedSet<State>(s1, s2, s3, s4, s5, s6, s7, s8);
 	
 	private static ConjunctiveFormula f1 = new ConjunctiveFormula(new PositiveLiteral(vl), new PositiveLiteral(dl));
 	private static ConjunctiveFormula f2 = new ConjunctiveFormula(new NegativeLiteral(vl), new PositiveLiteral(dr));
@@ -68,7 +74,7 @@ public class Test {
 	private static ConditionalTermEffect w8 = new ConditionalTermEffect(f4, new PositiveLiteralEffect(dr));
 	
 	public static Action suck = new Action(
-			"suck", 
+			new Name("suck"), 
 			new OneOfEffect(
 					new ConjunctiveEffect(w1, w3, w5, w7),
 					new ConjunctiveEffect(w1, w2, w3, w5, w7),
@@ -89,19 +95,38 @@ public class Test {
 			)
 	);
 	public static Action right = new Action(
-			"right", 
-			new PositiveLiteral(vl), 
+			new Name("right"), 
+//			new PositiveLiteral(vl), 
 			new NegativeLiteralEffect(vl)
 	);
 	public static Action left = new Action(
-			"left", 
-			new NegativeLiteral(vl), 
+			new Name("left"), 
+//			new NegativeLiteral(vl), 
 			new PositiveLiteralEffect(vl)
 	);
 	
-	private static List<Action> actions = Arrays.asList(suck, right, left);
+	public static Percept sd = new Percept("sense-dirt");
 	
-	public static void single() throws EmptyBeliefStateException, InconsistencyException {
+//	private static AdvancedSet<Percept> percepts = new AdvancedSet<>(sd);
+	
+	private static ConjunctiveFormula f5 = new ConjunctiveFormula(new PositiveLiteral(vl), new PositiveLiteral(dl));
+	private static ConjunctiveFormula f6 = new ConjunctiveFormula(new PositiveLiteral(vl), new NegativeLiteral(dl));
+	private static ConjunctiveFormula f7 = new ConjunctiveFormula(new NegativeLiteral(vl), new PositiveLiteral(dr));
+	private static ConjunctiveFormula f8 = new ConjunctiveFormula(new NegativeLiteral(vl), new NegativeLiteral(dr));
+	
+	private static ConditionalTermObservation w9 = new ConditionalTermObservation(f5, new PositiveLiteralObservation(sd)); 
+	private static ConditionalTermObservation w10 = new ConditionalTermObservation(f6, new NegativeLiteralObservation(sd)); 
+	private static ConditionalTermObservation w11 = new ConditionalTermObservation(f7, new PositiveLiteralObservation(sd)); 
+	private static ConditionalTermObservation w12 = new ConditionalTermObservation(f8, new NegativeLiteralObservation(sd));
+	
+	public static Action sense = new Action(
+			new Name("sense"), 
+			new ConjunctiveObservation(w9, w10, w11, w12)
+	);
+	
+	private static List<Action> actions = Arrays.asList(suck, right, left, sense);
+	
+	public static void single() throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
 		Init init = new OneOfInit(
 				new ConjunctiveInit(
 						new PositiveLiteralInit(vl), 
@@ -114,35 +139,18 @@ public class Test {
 				)
 		);
 		Formula goal = new ConjunctiveFormula(new NegativeLiteral(dl), new NegativeLiteral(dr));
-		Problem problem = new Problem(domain, actions, init, goal);
+		DomainProblem domainProblem = new DomainProblem(predicates, actions, init, goal);
 		
 		AndOrSearch aosearch = new AndOrSearch();
-		Plan plan = aosearch.search(problem);
+		Plan plan = aosearch.search(domainProblem);
 		
-		System.out.println("Intial belief state: " + problem.getInitialBeliefState());
-		System.out.println("               Goal: " + problem.getGoal());
-		System.out.println("               Plan: " + plan);
+		System.out.println("Init: " + domainProblem.getProblem().getInit());
+		System.out.println("Goal: " + domainProblem.getProblem().getGoal());
+		System.out.println("Plan: " + plan);
+		
+		System.err.println(plan.getDirectedGraph());
+		System.err.println(aosearch.getTrace());
 	}
-	
-//	public static void all() throws EmptyBeliefStateException, InconsistencyException {
-//		AdvancedSet<AdvancedSet<State>> subsets = states.powerset();
-//		subsets.remove(new AdvancedSet<State>());
-//		for(AdvancedSet<State> subset : subsets) {
-//			BeliefState initialBeliefState = new BeliefState();
-//			initialBeliefState.addAll(subset);
-//			Formula goal = new ConjunctiveFormula(new NegativeLiteral(dl), new NegativeLiteral(dr));
-//			Problem problem = new Problem(initialBeliefState, actions, goal);
-//			
-//			AndOrSearch aosearch = new AndOrSearch();
-//			Plan plan = aosearch.search(problem);
-//			
-//			if(plan == null) {
-//				System.exit(1);
-//			}
-//			
-//			System.out.println(initialBeliefState + " -> " + plan);
-//		}
-//	}
 	
 	public static void formulas() throws ParseException, EmptyBeliefStateException {
 		Parser parser = new Parser();
@@ -267,7 +275,7 @@ public class Test {
 		}
 	}
 	
-	public static void problem() throws IOException, ParseException, EmptyBeliefStateException, InconsistencyException {
+	public static void pddl() throws IOException, ParseException, InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
 		BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/kevin/Downloads/vacuum-world.nd-pddl"));
 		String input = "";
 		for(String line = bufferedReader.readLine(); line != null; line = bufferedReader.readLine()) {
@@ -276,15 +284,15 @@ public class Test {
 		bufferedReader.close();
 		
 		Parser parser = new Parser();
-		Problem problem = parser.parse(input);
+		DomainProblem domainProblem = parser.parse(input);
 		
 		AndOrSearch aosearch = new AndOrSearch();
-		Plan plan = aosearch.search(problem);
+		Plan plan = aosearch.search(domainProblem);
 		
-		System.out.println("Predicates: " + problem.getPredicates());
-		System.out.println("   Actions: " + problem.getActions());
-		System.out.println("      Init: " + problem.getInit());
-		System.out.println("      Goal: " + problem.getGoal());
+		System.out.println("Predicates: " + domainProblem.getDomain().getPredicates());
+		System.out.println("   Actions: " + domainProblem.getDomain().getActions());
+		System.out.println("      Init: " + domainProblem.getProblem().getInit());
+		System.out.println("      Goal: " + domainProblem.getProblem().getGoal());
 		System.out.println("      Plan: " + plan);
 	}
 	
@@ -310,12 +318,12 @@ public class Test {
 	
 	public static void main(String[] args) {
 		try {
-//			single();
+			single();
 //			all();
 //			formulas();
 //			effects();
 //			actions();
-			problem();
+//			pddl();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

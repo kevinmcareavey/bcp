@@ -6,47 +6,62 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import main.Action;
-import main.AdvancedSet;
-import main.Atom;
-import main.Effect;
-import main.Formula;
-import main.Init;
-import main.Name;
-import main.Problem;
-import main.Symbol;
-import main.effect.DeterministicEffect;
-import main.effect.deterministic.ConjunctiveEffect;
-import main.effect.deterministic.TermEffect;
-import main.effect.deterministic.term.ConditionalTermEffect;
-import main.effect.deterministic.term.UnconditionalTermEffect;
-import main.effect.deterministic.term.unconditional.ConstantEffect;
-import main.effect.deterministic.term.unconditional.LiteralEffect;
-import main.effect.deterministic.term.unconditional.constant.NullEffect;
-import main.effect.deterministic.term.unconditional.literal.NegativeLiteralEffect;
-import main.effect.deterministic.term.unconditional.literal.PositiveLiteralEffect;
-import main.effect.nondeterministic.OneOfEffect;
-import main.formula.ConjunctiveFormula;
-import main.formula.Term;
-import main.formula.term.Constant;
-import main.formula.term.Literal;
-import main.formula.term.constant.False;
-import main.formula.term.constant.True;
-import main.formula.term.literal.NegativeLiteral;
-import main.formula.term.literal.PositiveLiteral;
-import main.init.DeterministicInit;
-import main.init.deterministic.ConjunctiveInit;
-import main.init.deterministic.PositiveLiteralInit;
-import main.init.nondeterministic.OneOfInit;
+import language.Action;
+import language.Atom;
+import language.Domain;
+import language.DomainProblem;
+import language.Effect;
+import language.Formula;
+import language.Init;
+import language.Name;
+import language.Observation;
+import language.Percept;
+import language.Problem;
+import language.Symbol;
+import language.effect.DeterministicEffect;
+import language.effect.deterministic.ConjunctiveEffect;
+import language.effect.deterministic.TermEffect;
+import language.effect.deterministic.term.ConditionalTermEffect;
+import language.effect.deterministic.term.UnconditionalTermEffect;
+import language.effect.deterministic.term.unconditional.ConstantEffect;
+import language.effect.deterministic.term.unconditional.LiteralEffect;
+import language.effect.deterministic.term.unconditional.constant.NullEffect;
+import language.effect.deterministic.term.unconditional.literal.NegativeLiteralEffect;
+import language.effect.deterministic.term.unconditional.literal.PositiveLiteralEffect;
+import language.effect.nondeterministic.OneOfEffect;
+import language.formula.ConjunctiveFormula;
+import language.formula.Term;
+import language.formula.term.Constant;
+import language.formula.term.Literal;
+import language.formula.term.constant.False;
+import language.formula.term.constant.True;
+import language.formula.term.literal.NegativeLiteral;
+import language.formula.term.literal.PositiveLiteral;
+import language.init.DeterministicInit;
+import language.init.deterministic.ConjunctiveInit;
+import language.init.deterministic.PositiveLiteralInit;
+import language.init.nondeterministic.OneOfInit;
+import language.observation.DeterministicObservation;
+import language.observation.deterministic.ConjunctiveObservation;
+import language.observation.deterministic.TermObservation;
+import language.observation.deterministic.term.ConditionalTermObservation;
+import language.observation.deterministic.term.UnconditionalTermObservation;
+import language.observation.deterministic.term.unconditional.ConstantObservation;
+import language.observation.deterministic.term.unconditional.LiteralObservation;
+import language.observation.deterministic.term.unconditional.constant.NoObservation;
+import language.observation.deterministic.term.unconditional.literal.NegativeLiteralObservation;
+import language.observation.deterministic.term.unconditional.literal.PositiveLiteralObservation;
+import language.observation.nondeterministic.OneOfObservation;
+import structure.AdvancedSet;
 
 public class Parser {
 	
 	private Deque<String> tokens;
 	
-	public Problem parse(String s) throws ParseException {
+	public DomainProblem parse(String s) throws ParseException {
 		tokens = tokenize(s);
 		
-		Problem t = problem();
+		DomainProblem t = domainProblem();
 		
 		if(!tokens.isEmpty()) {
 			throw new ParseException("unprocessed tokens remain after parsing", tokens.size());
@@ -58,8 +73,8 @@ public class Parser {
 	private Deque<String> tokenize(String s) {
 		Deque<String> input = new ArrayDeque<String>();
 		
-		s = s.replace(Symbol.LEFT_PARENTHESIS, " ( ");
-		s = s.replace(Symbol.RIGHT_PARENTHESIS, " ) ");
+		s = s.replace(Symbol.LEFT_PARENTHESIS, " " + Symbol.LEFT_PARENTHESIS + " ");
+		s = s.replace(Symbol.RIGHT_PARENTHESIS, " " + Symbol.RIGHT_PARENTHESIS + " ");
 		
 		s = s.trim();
 		
@@ -109,7 +124,11 @@ public class Parser {
 		}
 	}
 	
-	private Problem problem() throws ParseException {
+	private DomainProblem domainProblem() throws ParseException {
+		return new DomainProblem(domain(), problem());
+	}
+	
+	private Domain domain() throws ParseException {
 		expect(Symbol.LEFT_PARENTHESIS);
 			expect(Symbol.DEFINE);
 			expect(Symbol.LEFT_PARENTHESIS);
@@ -118,11 +137,14 @@ public class Parser {
 			expect(Symbol.RIGHT_PARENTHESIS);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.PREDICATES);
-				AdvancedSet<Atom> domain = predicates();
+				AdvancedSet<Atom> predicates = predicates();
 			expect(Symbol.RIGHT_PARENTHESIS);
 			List<Action> actions = actions();
 		expect(Symbol.RIGHT_PARENTHESIS);
-		
+		return new Domain(predicates, actions);
+	}
+	
+	private Problem problem() throws ParseException {
 		expect(Symbol.LEFT_PARENTHESIS);
 			expect(Symbol.DEFINE);
 			expect(Symbol.LEFT_PARENTHESIS);
@@ -142,8 +164,7 @@ public class Parser {
 				Formula goal = formula();
 			expect(Symbol.RIGHT_PARENTHESIS);
 		expect(Symbol.RIGHT_PARENTHESIS);
-		
-		return new Problem(domain, actions, init, goal);
+		return new Problem(init, goal);
 	}
 	
 	private AdvancedSet<Atom> predicates() throws ParseException {
@@ -231,14 +252,148 @@ public class Parser {
 			consume();
 			formula = formula();
 		}
-		expect(Symbol.EFFECT);
-		Effect effect = effect();
+		Effect effect = null;
+		if(next().equals(Symbol.EFFECT)) {
+			consume();
+			effect = effect();
+		}
+		Observation observation = null;
+		if(effect == null) {
+			expect(Symbol.OBSERVATION);
+			observation = observation();
+		} else if(next().equals(Symbol.OBSERVATION)) {
+			consume();
+			observation = observation();
+		}
 		expect(Symbol.RIGHT_PARENTHESIS);
 		if(formula == null) {
-			return new Action(name, effect);
-		} else {
-			return new Action(name, formula, effect);
+			formula = new True();
 		}
+		if(effect == null) {
+			effect = new NullEffect();
+		}
+		if(observation == null) {
+			observation = new NoObservation();
+		}
+		return new Action(name, formula, effect, observation);
+	}
+	
+	private Observation observation() throws ParseException {
+		if(next().equals(Symbol.LEFT_PARENTHESIS)) {
+			if(afterNext().equals(Symbol.NONDETERMINISM)) {
+				return oneOfObservation();
+			} else if(afterNext().equals(Symbol.CONJUNCTION)) {
+				return conjunctiveObservation();
+			} else if(afterNext().equals(Symbol.CONDITIONAL)) {
+				return conditionalTermObservation();
+			} else if(afterNext().equals(Symbol.NEGATION)) {
+				return negativeLiteralObservation();
+			} else {
+				throw new ParseException("expected '" + Symbol.NONDETERMINISM + "' or '" + Symbol.CONJUNCTION + "' or '" + Symbol.CONDITIONAL + "' or '" + Symbol.NEGATION + "', found '" + next() + "'", tokens.size());
+			}
+		} else {
+			return deterministicObservation();
+		}
+	}
+	
+	private OneOfObservation oneOfObservation() throws ParseException {
+		expect(Symbol.LEFT_PARENTHESIS);
+		expect(Symbol.NONDETERMINISM);
+		AdvancedSet<DeterministicObservation> alternatives = new AdvancedSet<>();
+		while(!end()) {
+			alternatives.add(deterministicObservation());
+		}
+		if(alternatives.isEmpty()) {
+			throw new ParseException("empty non-deterministic observation", tokens.size());
+		}
+		expect(Symbol.RIGHT_PARENTHESIS);
+		return new OneOfObservation(alternatives);
+	}
+	
+	private DeterministicObservation deterministicObservation() throws ParseException {
+		if(next().equals(Symbol.LEFT_PARENTHESIS)) {
+			if(afterNext().equals(Symbol.CONJUNCTION)) {
+				return conjunctiveObservation();
+			} else if(afterNext().equals(Symbol.CONDITIONAL)) {
+				return conditionalTermObservation();
+			} else if(afterNext().equals(Symbol.NEGATION)) {
+				return negativeLiteralObservation();
+			} else {
+				throw new ParseException("expected '" + Symbol.CONJUNCTION + "' or '" + Symbol.CONDITIONAL + "' or '" + Symbol.NEGATION + "', found '" + next() + "'", tokens.size());
+			}
+		} else {
+			return termObservation();
+		}
+	}
+	
+	private ConjunctiveObservation conjunctiveObservation() throws ParseException {
+		expect(Symbol.LEFT_PARENTHESIS);
+		expect(Symbol.CONJUNCTION);
+		AdvancedSet<TermObservation> conjuncts = new AdvancedSet<>();
+		while(!end()) {
+			conjuncts.add(termObservation());
+		}
+		if(conjuncts.isEmpty()) {
+			throw new ParseException("empty conjunctive observation", tokens.size());
+		}
+		expect(Symbol.RIGHT_PARENTHESIS);
+		return new ConjunctiveObservation(conjuncts);
+	}
+	
+	private TermObservation termObservation() throws ParseException {
+		if(next().equals(Symbol.LEFT_PARENTHESIS)) {
+			if(afterNext().equals(Symbol.CONDITIONAL)) {
+				return conditionalTermObservation();
+			} else if(afterNext().equals(Symbol.NEGATION)) {
+				return negativeLiteralObservation();
+			} else {
+				throw new ParseException("expected '" + Symbol.CONDITIONAL + "' or '" + Symbol.NEGATION + "', found '" + next() + "'", tokens.size());
+			}
+		} else {
+			return unconditionalTermObservation();
+		}
+	}
+	
+	private ConditionalTermObservation conditionalTermObservation() throws ParseException {
+		expect(Symbol.LEFT_PARENTHESIS);
+		expect(Symbol.CONDITIONAL);
+		Formula formula = formula();
+		UnconditionalTermObservation unconditionalTermObservation = unconditionalTermObservation();
+		expect(Symbol.RIGHT_PARENTHESIS);
+		return new ConditionalTermObservation(formula, unconditionalTermObservation);
+	}
+	
+	private UnconditionalTermObservation unconditionalTermObservation() throws ParseException {
+		if(Symbol.isValidConstantObservation(next())) {
+			return constantObservation();
+		} else {
+			return literalObservation();
+		}
+	}
+	
+	private LiteralObservation literalObservation() throws ParseException {
+		if(next().equals(Symbol.LEFT_PARENTHESIS)) {
+			return negativeLiteralObservation();
+		} else {
+			return new PositiveLiteralObservation(percept());
+		}
+	}
+	
+	private NegativeLiteralObservation negativeLiteralObservation() throws ParseException {
+		expect(Symbol.LEFT_PARENTHESIS);
+		expect(Symbol.NEGATION);
+		Percept percept = percept();
+		expect(Symbol.RIGHT_PARENTHESIS);
+		return new NegativeLiteralObservation(percept);
+	}
+	
+	private ConstantObservation constantObservation() throws ParseException {
+		expect(Symbol.NOOB);
+		return new NoObservation();
+	}
+	
+	private Percept percept() throws ParseException {
+		return new Percept(name().getLabel());
 	}
 	
 	private Effect effect() throws ParseException {
