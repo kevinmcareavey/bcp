@@ -1,8 +1,8 @@
-# BCPlan
+# BCP
 
-BCPlan is a bounded contingent planner that uses the Bounded AO\* (BAO\*) search algorithm to find optimal strong solutions via belief space search.
+BCP is a branching-bounded contingent planner that uses the Bounded AO\* (BAO\*) search algorithm to find optimal strong solutions via belief space search.
 
-BCPlan is implemented in Java and depends on [JOpt Simple]([https://pholser.github.io/jopt-simple/).
+BCP is implemented in Java and depends on [JOpt Simple]([https://pholser.github.io/jopt-simple/).
 
 It has been tested on Ubuntu 18.04.1 (64-bit) and macOS 10.13.6.
 
