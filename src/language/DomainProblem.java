@@ -2,6 +2,7 @@ package language;
 
 import java.util.List;
 
+import exception.DomainMismatchException;
 import structure.AdvancedSet;
 
 public class DomainProblem {
@@ -9,13 +10,16 @@ public class DomainProblem {
 	private Domain domain;
 	private Problem problem;
 	
-	public DomainProblem(Domain domain, Problem problem) {
+	public DomainProblem(Domain domain, Problem problem) throws DomainMismatchException {
+		if(!domain.getName().equals(problem.getDomainName())) {
+			throw new DomainMismatchException(domain, problem);
+		}
 		this.setDomain(domain);
 		this.setProblem(problem);
 	}
 	
-	public DomainProblem(AdvancedSet<Atom> predicates, List<Action> actions, Init init, Formula goal) {
-		this(new Domain(predicates, actions), new Problem(init, goal));
+	public DomainProblem(Name domainName, AdvancedSet<Atom> predicates, List<Action> actions, Name problemName, Init init, Formula goal) throws DomainMismatchException {
+		this(new Domain(domainName, predicates, actions), new Problem(problemName, domainName, init, goal));
 	}
 
 	public Domain getDomain() {
@@ -32,6 +36,11 @@ public class DomainProblem {
 
 	public void setProblem(Problem problem) {
 		this.problem = problem;
+	}
+	
+	@Override
+	public String toString() {
+		return this.getDomain().toString() + "\n" + this.getProblem().toString();
 	}
 
 }

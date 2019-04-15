@@ -27,6 +27,8 @@ public class Symbol {
 	public static final String INIT = ":init";
 	public static final String GOAL = ":goal";
 	
+	public static final String INFINITY = "infinity";
+	
 	public static boolean isValid(String label) {
 		return label.equals(LEFT_PARENTHESIS) 
 				|| label.equals(RIGHT_PARENTHESIS) 

@@ -2,7 +2,7 @@ package language.effect;
 
 import language.Atom;
 import language.Effect;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public abstract class DeterministicEffect extends Effect {

@@ -3,7 +3,7 @@ package language.observation.deterministic;
 import language.Symbol;
 import language.observation.DeterministicObservation;
 import language.observation.deterministic.term.UnconditionalTermObservation;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class ConjunctiveObservation extends DeterministicObservation {

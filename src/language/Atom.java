@@ -9,7 +9,6 @@ public class Atom extends Name {
 	@Override
 	public String toString() {
 		return this.getLabel();
-//		return "[Atom: " + this.getLabel() + "]";
 	}
 
 }

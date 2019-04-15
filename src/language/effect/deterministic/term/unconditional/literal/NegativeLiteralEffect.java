@@ -3,7 +3,7 @@ package language.effect.deterministic.term.unconditional.literal;
 import language.Atom;
 import language.Symbol;
 import language.effect.deterministic.term.unconditional.LiteralEffect;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class NegativeLiteralEffect extends LiteralEffect {

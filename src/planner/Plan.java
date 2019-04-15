@@ -1,13 +1,15 @@
-package search;
+package planner;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import graphviz.DirectedEdge;
-import graphviz.DirectedGraph;
-import graphviz.EdgeStyle;
-import graphviz.Node;
-import graphviz.NodeStyle;
+import graphviz.DotEdge;
+import graphviz.DotEdgeFormat;
+import graphviz.DotGraph;
+import graphviz.DotEdgeStyle;
+import graphviz.DotNode;
+import graphviz.DotNodeFormat;
+import graphviz.DotNodeStyle;
 import language.Action;
 import language.action.NoAction;
 import language.observation.deterministic.term.UnconditionalTermObservation;
@@ -86,23 +88,26 @@ public class Plan {
 		}
 	}
 	
-	public DirectedGraph getDirectedGraph() {
-		Node parent = new Node(Node.COUNTER, this.getAction().getName().toString(), NodeStyle.SOLID);
-		return this.getDirectedGraph(new DirectedGraph("plan"), parent);
+	public DotGraph getDotGraph() {
+		DotNode parent = new DotNode();
+		DotGraph dotGraph = this.getDotGraph(new DotGraph("plan"), parent);
+		dotGraph.setFormat(parent, new DotNodeFormat(this.getAction().getName().toString(), DotNodeStyle.OR_EXPLORED));
+		return dotGraph;
 	}
 	
-	private DirectedGraph getDirectedGraph(DirectedGraph directedGraph, Node parent) {
+	private DotGraph getDotGraph(DotGraph directedGraph, DotNode parent) {
 		if(this.getSubplans() != null) {
 			for(Map.Entry<UnconditionalTermObservation, Plan> entry : this.getSubplans().entrySet()) {
 				UnconditionalTermObservation observation = entry.getKey();
 				Plan plan = entry.getValue();
-				Node child = new Node(Node.COUNTER, plan.getAction().getName().toString(), NodeStyle.SOLID);
+				DotNode child = new DotNode();
 				if(this.getSubplans().size() > 1) {
-					directedGraph.addEdge(new DirectedEdge(parent, child, observation.toString(), EdgeStyle.DOTTED));
+					directedGraph.addEdge(new DotEdge(parent, child), new DotEdgeFormat(DotEdgeStyle.AND, observation.toString()));
 				} else {
-					directedGraph.addEdge(new DirectedEdge(parent, child, EdgeStyle.SOLID));
+					directedGraph.addEdge(new DotEdge(parent, child), new DotEdgeFormat(DotEdgeStyle.OR));
 				}
-				directedGraph = plan.getDirectedGraph(directedGraph, child);
+				directedGraph = plan.getDotGraph(directedGraph, child);
+				directedGraph.setFormat(child, new DotNodeFormat(plan.getAction().getName().toString(), DotNodeStyle.OR_EXPLORED));
 			}
 		}
 		return directedGraph;
@@ -117,7 +122,6 @@ public class Plan {
 			for(Map.Entry<UnconditionalTermObservation, Plan> entry : this.getSubplans().entrySet()) {
 				UnconditionalTermObservation observation = entry.getKey();
 				Plan plan = entry.getValue();
-//				if(this.getSubplans().size() == 1) {
 				if(observation instanceof NoObservation) {
 					output += delim + plan.toString().substring(1, plan.toString().length() - 1);
 				} else {

@@ -2,7 +2,7 @@ package language.formula.term.constant;
 
 import language.Symbol;
 import language.formula.term.Constant;
-import search.State;
+import planner.State;
 
 public class True extends Constant {
 	

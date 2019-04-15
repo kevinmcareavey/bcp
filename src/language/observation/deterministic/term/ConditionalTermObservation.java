@@ -3,7 +3,7 @@ package language.observation.deterministic.term;
 import language.Formula;
 import language.Symbol;
 import language.observation.deterministic.TermObservation;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class ConditionalTermObservation extends TermObservation {

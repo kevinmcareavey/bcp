@@ -5,7 +5,7 @@ import java.util.List;
 
 import language.Formula;
 import language.Symbol;
-import search.State;
+import planner.State;
 
 public class ConjunctiveFormula extends Formula {
 	
@@ -40,12 +40,10 @@ public class ConjunctiveFormula extends Formula {
 	@Override
 	public String toString() {
 		String output = "(" + Symbol.CONJUNCTION;
-//		String output = "[ConjunctiveFormula:";
 		for(Term conjunct : this.getTerms()) {
 			output += " " + conjunct.toString();
 		}
 		output += ")";
-//		output += "]";
 		return output;
 	}
 

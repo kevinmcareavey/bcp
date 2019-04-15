@@ -1,11 +1,15 @@
 package parser;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import exception.DomainMismatchException;
 import language.Action;
 import language.Atom;
 import language.Domain;
@@ -58,10 +62,59 @@ public class Parser {
 	
 	private Deque<String> tokens;
 	
-	public DomainProblem parse(String s) throws ParseException {
+	public DomainProblem read(String combined) throws ParseException, IOException, DomainMismatchException {
+		Parser parser = new Parser();
+		return parser.parse(this.dump(combined));
+	}
+	
+	public Domain readOperator(String operator) throws ParseException, IOException {
+		Parser parser = new Parser();
+		return parser.parseDomain(this.dump(operator));
+	}
+	
+	public Problem readFact(String fact) throws ParseException, IOException {
+		Parser parser = new Parser();
+		return parser.parseProblem(this.dump(fact));
+	}
+	
+	public String dump(String file) throws IOException {
+		BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+		String input = "";
+		for(String line = bufferedReader.readLine(); line != null; line = bufferedReader.readLine()) {
+			input += line;
+		}
+		bufferedReader.close();
+		return input;
+	}
+	
+	public DomainProblem parse(String s) throws ParseException, DomainMismatchException {
 		tokens = tokenize(s);
 		
 		DomainProblem t = domainProblem();
+		
+		if(!tokens.isEmpty()) {
+			throw new ParseException("unprocessed tokens remain after parsing", tokens.size());
+		}
+		
+		return t;
+	}
+	
+	public Domain parseDomain(String s) throws ParseException {
+		tokens = tokenize(s);
+		
+		Domain t = domain();
+		
+		if(!tokens.isEmpty()) {
+			throw new ParseException("unprocessed tokens remain after parsing", tokens.size());
+		}
+		
+		return t;
+	}
+	
+	public Problem parseProblem(String s) throws ParseException {
+		tokens = tokenize(s);
+		
+		Problem t = problem();
 		
 		if(!tokens.isEmpty()) {
 			throw new ParseException("unprocessed tokens remain after parsing", tokens.size());
@@ -124,7 +177,7 @@ public class Parser {
 		}
 	}
 	
-	private DomainProblem domainProblem() throws ParseException {
+	private DomainProblem domainProblem() throws ParseException, DomainMismatchException {
 		return new DomainProblem(domain(), problem());
 	}
 	
@@ -133,7 +186,7 @@ public class Parser {
 			expect(Symbol.DEFINE);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.DOMAIN);
-				name();
+				Name domainName = name();
 			expect(Symbol.RIGHT_PARENTHESIS);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.PREDICATES);
@@ -141,7 +194,7 @@ public class Parser {
 			expect(Symbol.RIGHT_PARENTHESIS);
 			List<Action> actions = actions();
 		expect(Symbol.RIGHT_PARENTHESIS);
-		return new Domain(predicates, actions);
+		return new Domain(domainName, predicates, actions);
 	}
 	
 	private Problem problem() throws ParseException {
@@ -149,11 +202,11 @@ public class Parser {
 			expect(Symbol.DEFINE);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.PROBLEM);
-				name();
+				Name problemName = name();
 			expect(Symbol.RIGHT_PARENTHESIS);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.DOMAIN_REF);
-				name();
+				Name domainName = name();
 			expect(Symbol.RIGHT_PARENTHESIS);
 			expect(Symbol.LEFT_PARENTHESIS);
 				expect(Symbol.INIT);
@@ -164,7 +217,7 @@ public class Parser {
 				Formula goal = formula();
 			expect(Symbol.RIGHT_PARENTHESIS);
 		expect(Symbol.RIGHT_PARENTHESIS);
-		return new Problem(init, goal);
+		return new Problem(problemName, domainName, init, goal);
 	}
 	
 	private AdvancedSet<Atom> predicates() throws ParseException {

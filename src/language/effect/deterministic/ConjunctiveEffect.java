@@ -3,7 +3,7 @@ package language.effect.deterministic;
 import language.Atom;
 import language.Symbol;
 import language.effect.DeterministicEffect;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class ConjunctiveEffect extends DeterministicEffect {

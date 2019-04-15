@@ -70,34 +70,9 @@ public class Action {
 		this.observation = observation;
 	}
 	
-	public String pddl() {
-		String output = "( " + Symbol.ACTION;
-		if(!(this.getPrecondition() instanceof True)) {
-			output += "\n\t" + Symbol.PRECONDITION + " " + this.getPrecondition();
-		}
-		output += "\n\t" + Symbol.EFFECT + " " + this.getEffect();
-		if(!(this.getObservation() instanceof NoObservation)) {
-			output += "\n\t" + Symbol.OBSERVATION + " " + this.getObservation();
-		}
-		output += "\n)";
-		return output;
-	}
-	
 	@Override
 	public String toString() {
-		String output = "(" + Symbol.ACTION + " " + this.getName();
-		if(!(this.getPrecondition() instanceof True)) {
-			output += " " + Symbol.PRECONDITION + " " + this.getPrecondition();
-		}
-		if(!(this.getEffect() instanceof NullEffect)) {
-			output += " " + Symbol.EFFECT + " " + this.getEffect();
-		}
-		if(!(this.getObservation() instanceof NoObservation)) {
-			output += " " + Symbol.OBSERVATION + " " + this.getObservation();
-		}
-		output += ")";
-		return output;
-//		return "[Action: " + this.getName() + " " + this.getPrecondition() + " " + this.getEffect() + " " + this.getObservation() + "]";
+		return this.getName().toString();
 	}
 
 }

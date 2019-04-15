@@ -1,7 +1,7 @@
 package language.observation.deterministic.term;
 
 import language.observation.deterministic.TermObservation;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public abstract class UnconditionalTermObservation extends TermObservation {

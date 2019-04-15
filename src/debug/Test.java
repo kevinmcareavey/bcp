@@ -1,15 +1,14 @@
 package debug;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import exception.DomainMismatchException;
 import exception.EmptyBeliefStateException;
 import exception.InconsistencyException;
+import exception.InvalidNumException;
 import exception.UnrecognisedEffect;
 import exception.UnrecognisedObservation;
 import language.Action;
@@ -36,8 +35,10 @@ import language.observation.deterministic.term.ConditionalTermObservation;
 import language.observation.deterministic.term.unconditional.literal.NegativeLiteralObservation;
 import language.observation.deterministic.term.unconditional.literal.PositiveLiteralObservation;
 import parser.Parser;
-import search.AndOrSearch;
-import search.Plan;
+import planner.Plan;
+import planner.num.FiniteNum;
+import planner.num.InfiniteNum;
+import planner.search.BAOStar;
 import structure.AdvancedSet;
 
 public class Test {
@@ -47,17 +48,6 @@ public class Test {
 	public static Atom dr = new Atom("dirt-right");
 	
 	private static AdvancedSet<Atom> predicates = new AdvancedSet<>(vl, dl, dr);
-	
-//	private static State s1 = new State(vl, dl, dr);
-//	private static State s2 = new State(dl, dr);
-//	private static State s3 = new State(vl, dl);
-//	private static State s4 = new State(dl);
-//	private static State s5 = new State(vl, dr);
-//	private static State s6 = new State(dr);
-//	private static State s7 = new State(vl);
-//	private static State s8 = new State();
-//	
-//	private static AdvancedSet<State> states = new AdvancedSet<State>(s1, s2, s3, s4, s5, s6, s7, s8);
 	
 	private static ConjunctiveFormula f1 = new ConjunctiveFormula(new PositiveLiteral(vl), new PositiveLiteral(dl));
 	private static ConjunctiveFormula f2 = new ConjunctiveFormula(new NegativeLiteral(vl), new PositiveLiteral(dr));
@@ -96,18 +86,14 @@ public class Test {
 	);
 	public static Action right = new Action(
 			new Name("right"), 
-//			new PositiveLiteral(vl), 
 			new NegativeLiteralEffect(vl)
 	);
 	public static Action left = new Action(
 			new Name("left"), 
-//			new NegativeLiteral(vl), 
 			new PositiveLiteralEffect(vl)
 	);
 	
 	public static Percept sd = new Percept("sense-dirt");
-	
-//	private static AdvancedSet<Percept> percepts = new AdvancedSet<>(sd);
 	
 	private static ConjunctiveFormula f5 = new ConjunctiveFormula(new PositiveLiteral(vl), new PositiveLiteral(dl));
 	private static ConjunctiveFormula f6 = new ConjunctiveFormula(new PositiveLiteral(vl), new NegativeLiteral(dl));
@@ -126,7 +112,7 @@ public class Test {
 	
 	private static List<Action> actions = Arrays.asList(suck, right, left, sense);
 	
-	public static void single() throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
+	public static void hardCoded() throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation, IOException, InterruptedException, DomainMismatchException, InvalidNumException {
 		Init init = new OneOfInit(
 				new ConjunctiveInit(
 						new PositiveLiteralInit(vl), 
@@ -139,191 +125,43 @@ public class Test {
 				)
 		);
 		Formula goal = new ConjunctiveFormula(new NegativeLiteral(dl), new NegativeLiteral(dr));
-		DomainProblem domainProblem = new DomainProblem(predicates, actions, init, goal);
+		DomainProblem domainProblem = new DomainProblem(new Name(""), predicates, actions, new Name(""), init, goal);
 		
-		AndOrSearch aosearch = new AndOrSearch();
-		Plan plan = aosearch.search(domainProblem);
-		
-		System.out.println("Init: " + domainProblem.getProblem().getInit());
-		System.out.println("Goal: " + domainProblem.getProblem().getGoal());
-		System.out.println("Plan: " + plan);
-		
-		System.err.println(plan.getDirectedGraph());
-		System.err.println(aosearch.getTrace());
+		BAOStar search = new BAOStar(domainProblem, new FiniteNum(1));
+		Plan plan = search.search();
+		System.out.println(plan);
+		if(plan != null) {
+			plan.getDotGraph().writeToPdf(System.getProperty("user.home") + "/plan.pdf");
+		}
 	}
 	
-	public static void formulas() throws ParseException, EmptyBeliefStateException {
+	public static void file() {
+	try {
 		Parser parser = new Parser();
-		List<String> tests = new ArrayList<>();
-		tests.add("true");
-		tests.add(" true");
-		tests.add("true ");
-		tests.add(" true ");
 		
-		tests.add("false");
+//		Domain domain = parser.readOperator(System.getProperty("user.home") + "/Downloads/operator.cpddl");
+//		Problem problem = parser.readFact(System.getProperty("user.home") + "/Downloads/fact.cpddl");
+//		DomainProblem domainProblem = new DomainProblem(domain, problem);
+//		System.out.println(domainProblem);
 		
-		tests.add("atom");
-		tests.add(" atom");
-		tests.add("atom ");
-		tests.add(" atom ");
+		DomainProblem domainProblem = parser.read(System.getProperty("user.home") + "/Downloads/combined.cpddl");
+		System.out.println(domainProblem);
 		
-		tests.add("(not atom)");
-		tests.add("(not atom )");
-		tests.add("( not atom )");
-		tests.add(" (not atom)");
-		tests.add("(not atom) ");
-		tests.add(" (not atom) ");
-		
-		tests.add("(and a1 a2 a3)");
-		tests.add("(and (not a1) a2 a3)");
-		tests.add("(and a1 (not a2) a3)");
-		tests.add("(and a1 a2 (not a3))");
-		
-		int indent = maxLength(tests);
-		for(String test : tests) {
-			System.out.println(Test.pad("'" + test + "'", indent + 2) + " = " + parser.parse(test));
+		BAOStar aosearch = new BAOStar(domainProblem, new InfiniteNum());
+		Plan plan = aosearch.search();
+		System.out.println(plan);
+		if(plan != null) {
+			plan.getDotGraph().writeToPdf(System.getProperty("user.home") + "/plan.pdf");
 		}
+	} catch (ParseException | IOException | DomainMismatchException | UnrecognisedEffect | InconsistencyException | UnrecognisedObservation | InterruptedException | InvalidNumException e) {
+		e.printStackTrace();
 	}
-	
-	public static void effects() throws ParseException, EmptyBeliefStateException {
-		Parser parser = new Parser();
-		List<String> tests = new ArrayList<>();
-		tests.add("null");
-		tests.add(" null");
-		tests.add("null ");
-		tests.add(" null ");
-		
-		tests.add("atom");
-		tests.add(" atom");
-		tests.add("atom ");
-		tests.add(" atom ");
-		
-		tests.add("(not atom)");
-		tests.add("(not atom )");
-		tests.add("( not atom )");
-		tests.add(" (not atom)");
-		tests.add("(not atom) ");
-		tests.add(" (not atom) ");
-		
-		tests.add("(when a1 a2)");
-		tests.add("(when (not a1) a2)");
-		tests.add("(when a1 (not a2))");
-		tests.add("(when (not a1) (not a2))");
-		tests.add("(when (and a1 a2) a3)");
-		
-		tests.add("(and a1 a2)");
-		tests.add("(and a1 (not a2))");
-		tests.add("(and a1 (when a2 a3))");
-		
-		int indent = maxLength(tests);
-		for(String test : tests) {
-			System.out.println(Test.pad("'" + test + "'", indent + 2) + " = " + parser.parse(test));
-		}
-	}
-	
-	public static void actions() throws ParseException, EmptyBeliefStateException {
-		Parser parser = new Parser();
-		List<String> tests = new ArrayList<>();
-		tests.add("(:action a1 :precondition true :effect null)");
-		tests.add("(:action a1 :precondition false :effect null)");
-		tests.add("(:action a1 :precondition p1 :effect null)");
-		tests.add("(:action a1 :precondition (not p1) :effect null)");
-		tests.add("(:action a1 :precondition (and p1 p2) :effect null)");
-		tests.add("(:action a1 :precondition (and p1 (not p2)) :effect null)");
-		tests.add("(:action a1 :precondition (and (not p1) p2) :effect null)");
-		tests.add("(:action a1 :precondition (and (not p1) (not p2)) :effect null)");
-		
-		tests.add("(:action a1 :precondition true :effect q1)");
-		tests.add("(:action a1 :precondition false :effect q1)");
-		tests.add("(:action a1 :precondition p1 :effect q1)");
-		tests.add("(:action a1 :precondition (not p1) :effect q1)");
-		tests.add("(:action a1 :precondition (and p1 p2) :effect q1)");
-		tests.add("(:action a1 :precondition (and p1 (not p2)) :effect q1)");
-		tests.add("(:action a1 :precondition (and (not p1) p2) :effect q1)");
-		tests.add("(:action a1 :precondition (and (not p1) (not p2)) :effect q1)");
-		
-		tests.add("(:action a1 :precondition true :effect (not q1))");
-		tests.add("(:action a1 :precondition false :effect (not q1))");
-		tests.add("(:action a1 :precondition p1 :effect (not q1))");
-		tests.add("(:action a1 :precondition (not p1) :effect (not q1))");
-		tests.add("(:action a1 :precondition (and p1 p2) :effect (not q1))");
-		tests.add("(:action a1 :precondition (and p1 (not p2)) :effect (not q1))");
-		tests.add("(:action a1 :precondition (and (not p1) p2) :effect (not q1))");
-		tests.add("(:action a1 :precondition (and (not p1) (not p2)) :effect (not q1))");
-		
-		tests.add("(:action a1 :precondition true :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition false :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition p1 :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition (not p1) :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition (and p1 p2) :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition (and p1 (not p2)) :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition (and (not p1) p2) :effect (when p3 q1))");
-		tests.add("(:action a1 :precondition (and (not p1) (not p2)) :effect (when p3 q1))");
-		
-		tests.add("(:action a1 :precondition true :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition false :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition p1 :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition (not p1) :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition (and p1 p2) :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition (and p1 (not p2)) :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition (and (not p1) p2) :effect (and q1 q2))");
-		tests.add("(:action a1 :precondition (and (not p1) (not p2)) :effect (and q1 q2))");
-		
-		int indent = maxLength(tests);
-		for(String test : tests) {
-			System.out.println(Test.pad("'" + test + "'", indent + 2) + " = " + parser.parse(test));
-		}
-	}
-	
-	public static void pddl() throws IOException, ParseException, InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
-		BufferedReader bufferedReader = new BufferedReader(new FileReader("/Users/kevin/Downloads/vacuum-world.nd-pddl"));
-		String input = "";
-		for(String line = bufferedReader.readLine(); line != null; line = bufferedReader.readLine()) {
-			input += line;
-		}
-		bufferedReader.close();
-		
-		Parser parser = new Parser();
-		DomainProblem domainProblem = parser.parse(input);
-		
-		AndOrSearch aosearch = new AndOrSearch();
-		Plan plan = aosearch.search(domainProblem);
-		
-		System.out.println("Predicates: " + domainProblem.getDomain().getPredicates());
-		System.out.println("   Actions: " + domainProblem.getDomain().getActions());
-		System.out.println("      Init: " + domainProblem.getProblem().getInit());
-		System.out.println("      Goal: " + domainProblem.getProblem().getGoal());
-		System.out.println("      Plan: " + plan);
-	}
-	
-	public static int maxLength(List<String> tests) {
-		int indent = 0;
-		for(String test : tests) {
-			int length = test.length();
-			if(length > indent) {
-				indent = length;
-			}
-		}
-		return indent;
-	}
-	
-	public static String pad(String input, int indent) {
-		int padding = indent - input.length();
-		if(padding > 0) {
-			return new String(new char[padding]).replace("\0", " ") + input;
-		} else {
-			return input;
-		}
-	}
+}
 	
 	public static void main(String[] args) {
 		try {
-			single();
-//			all();
-//			formulas();
-//			effects();
-//			actions();
-//			pddl();
+			hardCoded();
+//			file();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

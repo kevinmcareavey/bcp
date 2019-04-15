@@ -3,7 +3,7 @@ package language.effect.deterministic.term.unconditional.constant;
 import language.Atom;
 import language.Symbol;
 import language.effect.deterministic.term.unconditional.ConstantEffect;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class NullEffect extends ConstantEffect {

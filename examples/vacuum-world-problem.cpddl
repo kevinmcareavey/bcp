@@ -1,0 +1,13 @@
+(define (problem vacuum-world-problem)
+	(:domain vacuum-world-domain)
+	(:init (oneof
+			(and dirt-right dirt-left)
+			(and vacuum-left dirt-left dirt-right)
+		)
+	)
+	(:goal (and
+			(not dirt-left)
+			(not dirt-right)
+		)
+	)
+)

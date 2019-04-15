@@ -1,7 +1,7 @@
 package language;
 
-import search.BeliefState;
-import search.State;
+import planner.BeliefState;
+import planner.State;
 import structure.AdvancedSet;
 
 public abstract class Formula {

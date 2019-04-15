@@ -4,7 +4,7 @@ import language.Atom;
 import language.Formula;
 import language.Symbol;
 import language.effect.deterministic.TermEffect;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class ConditionalTermEffect extends TermEffect {

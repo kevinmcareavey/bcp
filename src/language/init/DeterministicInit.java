@@ -1,8 +1,8 @@
 package language.init;
 
 import language.Init;
-import search.BeliefState;
-import search.State;
+import planner.BeliefState;
+import planner.State;
 
 public abstract class DeterministicInit extends Init {
 	

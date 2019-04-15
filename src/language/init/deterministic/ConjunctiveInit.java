@@ -2,7 +2,7 @@ package language.init.deterministic;
 
 import language.Symbol;
 import language.init.DeterministicInit;
-import search.State;
+import planner.State;
 import structure.AdvancedSet;
 
 public class ConjunctiveInit extends DeterministicInit {

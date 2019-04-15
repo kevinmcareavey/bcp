@@ -1,6 +1,6 @@
 package language;
 
-import search.BeliefState;
+import planner.BeliefState;
 
 public abstract class Init {
 	

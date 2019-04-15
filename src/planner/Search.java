@@ -1,21 +1,14 @@
-package search;
+package planner;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import exception.EmptyBeliefStateException;
 import exception.InconsistencyException;
 import exception.UnrecognisedEffect;
 import exception.UnrecognisedObservation;
-import graphviz.DirectedEdge;
-import graphviz.DirectedGraph;
-import graphviz.EdgeStyle;
-import graphviz.Node;
-import graphviz.NodeStyle;
 import language.Action;
 import language.Atom;
 import language.DomainProblem;
-import language.Formula;
 import language.effect.DeterministicEffect;
 import language.effect.nondeterministic.OneOfEffect;
 import language.observation.DeterministicObservation;
@@ -23,16 +16,28 @@ import language.observation.deterministic.term.UnconditionalTermObservation;
 import language.observation.nondeterministic.OneOfObservation;
 import structure.AdvancedSet;
 
-public class AndOrSearch {
+public abstract class Search {
 	
-	private DirectedGraph trace;
+	private DomainProblem domainProblem;
+	
+	public Search(DomainProblem domainProblem) {
+		this.setDomainProblem(domainProblem);
+	}
+	
+	public DomainProblem getDomainProblem() {
+		return this.domainProblem;
+	}
+
+	public void setDomainProblem(DomainProblem domainProblem) {
+		this.domainProblem = domainProblem;
+	}
 	
 	/*
 	 * Assumption: an action is "cautiously executable" in a belief state if it is executable in EVERY state in the belief state
 	 */
-	private List<Action> getCautiouslyExecutable(List<Action> actions, BeliefState beliefState) {
+	protected List<Action> getCautiouslyExecutable(BeliefState beliefState) {
 		List<Action> subset = new ArrayList<>();
-		for(Action action : actions) {
+		for(Action action : this.getDomainProblem().getDomain().getActions()) {
 			if(this.isCautiouslyExecutable(action, beliefState)) {
 				subset.add(action);
 			}
@@ -96,7 +101,7 @@ public class AndOrSearch {
 		return predictedState;
 	}
 	
-	private AdvancedSet<UnconditionalTermObservation> getPredictedObservations(Action action, BeliefState predictedBeliefState) throws UnrecognisedObservation {
+	protected AdvancedSet<UnconditionalTermObservation> getPredictedObservations(Action action, BeliefState predictedBeliefState) throws UnrecognisedObservation {
 		if(action.getObservation() instanceof DeterministicObservation) {
 			DeterministicObservation deterministicObservation = (DeterministicObservation) action.getObservation();
 			AdvancedSet<UnconditionalTermObservation> predictedObservations = new AdvancedSet<UnconditionalTermObservation>();
@@ -134,7 +139,7 @@ public class AndOrSearch {
 		}
 	}
 	
-	private BeliefState getUpdatedBeliefState(Action action, BeliefState predictedBeliefState, UnconditionalTermObservation observation) throws UnrecognisedObservation {
+	protected BeliefState getUpdatedBeliefState(Action action, BeliefState predictedBeliefState, UnconditionalTermObservation observation) throws UnrecognisedObservation {
 		BeliefState updatedBeliefState = new BeliefState();
 		for(State predictedState : predictedBeliefState) {
 			if(this.getPredictedObservations(action, predictedState).contains(observation)) {
@@ -142,74 +147,6 @@ public class AndOrSearch {
 			}
 		}
 		return updatedBeliefState;
-	}
-	
-	public Plan search(DomainProblem domainProblem) throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
-		this.setTrace(new DirectedGraph("trace"));
-		Node startNode = new Node(Node.COUNTER, "START", NodeStyle.BOLD);
-		Node beliedStateNode = new Node(Node.COUNTER, domainProblem.getProblem().getInit().getBeliefState().toString(), NodeStyle.SOLID);
-		this.getTrace().addEdge(new DirectedEdge(startNode, beliedStateNode, EdgeStyle.NONE));
-		
-		return this.orSearch(domainProblem.getDomain().getActions(), domainProblem.getProblem().getGoal(), new Path(), domainProblem.getProblem().getInit().getBeliefState(), beliedStateNode);
-	}
-	
-	private Plan orSearch(List<Action> actions, Formula goal, Path path, BeliefState beliefState, Node beliedStateNode) throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
-		if(goal.satisfies(beliefState)) {
-			this.getTrace().addEdge(new DirectedEdge(beliedStateNode, new Node(Node.COUNTER, "SUCCESS", NodeStyle.BOLD), EdgeStyle.NONE));
-			return new Plan();
-		}
-		
-		if(path.contains(beliefState)) {
-			this.getTrace().addEdge(new DirectedEdge(beliedStateNode, new Node(Node.COUNTER, "FAIL", NodeStyle.FILLED), EdgeStyle.NONE));
-			return null;
-		}
-		
-		List<Action> executableActions = this.getCautiouslyExecutable(actions, beliefState);
-		for(Action action : executableActions) {
-			Path extendedPath = path.prepend(beliefState);
-			
-			Plan plan = this.andSearch(actions, goal, extendedPath, beliefState, action, beliedStateNode);
-			if(plan != null) {
-				plan.setAction(action);
-				return plan;
-			}
-		}
-		
-		this.getTrace().addEdge(new DirectedEdge(beliedStateNode, new Node(Node.COUNTER, "FAIL", NodeStyle.FILLED), EdgeStyle.NONE));
-		return null;
-	}
-	
-	private Plan andSearch(List<Action> actions, Formula goal, Path path, BeliefState beliefState, Action action, Node beliedStateNode) throws InconsistencyException, EmptyBeliefStateException, UnrecognisedEffect, UnrecognisedObservation {
-		Plan plan = new Plan();
-		
-		BeliefState predictedBeliefState = this.getPredictedBeliefState(beliefState, action);
-		
-		Node predictedBeliefStateNode = new Node(Node.COUNTER, predictedBeliefState.toString(), NodeStyle.DOTTED);
-		this.getTrace().addEdge(new DirectedEdge(beliedStateNode, predictedBeliefStateNode, action.getName().toString(), EdgeStyle.SOLID));
-		
-		AdvancedSet<UnconditionalTermObservation> predictedObservations = this.getPredictedObservations(action, predictedBeliefState);
-		for(UnconditionalTermObservation predictedObservation : predictedObservations) {
-			BeliefState updatedBeliefState = this.getUpdatedBeliefState(action, predictedBeliefState, predictedObservation);
-			
-			Node updatedBeliefStateNode = new Node(Node.COUNTER, updatedBeliefState.toString(), NodeStyle.SOLID);
-			this.getTrace().addEdge(new DirectedEdge(predictedBeliefStateNode, updatedBeliefStateNode, predictedObservation.toString(), EdgeStyle.DOTTED));
-			
-			Plan subplan = this.orSearch(actions, goal, path, updatedBeliefState, updatedBeliefStateNode);
-			if(subplan == null) {
-				return null;
-			}
-			plan.addSubplan(predictedObservation, subplan);
-		}
-		
-		return plan;
-	}
-	
-	public DirectedGraph getTrace() {
-		return this.trace;
-	}
-	
-	public void setTrace(DirectedGraph trace) {
-		this.trace = trace;
 	}
 
 }

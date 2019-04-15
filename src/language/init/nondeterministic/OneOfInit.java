@@ -3,7 +3,7 @@ package language.init.nondeterministic;
 import language.Symbol;
 import language.init.DeterministicInit;
 import language.init.NondeterministicInit;
-import search.BeliefState;
+import planner.BeliefState;
 import structure.AdvancedSet;
 
 public class OneOfInit extends NondeterministicInit {

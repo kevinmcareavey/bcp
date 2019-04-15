@@ -2,7 +2,7 @@ package language.init.deterministic;
 
 import language.Atom;
 import language.init.DeterministicInit;
-import search.State;
+import planner.State;
 
 public class PositiveLiteralInit extends DeterministicInit {
 	

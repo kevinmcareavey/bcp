@@ -2,7 +2,7 @@ package language.formula.term.literal;
 
 import language.Atom;
 import language.formula.term.Literal;
-import search.State;
+import planner.State;
 
 public class PositiveLiteral extends Literal {
 	
